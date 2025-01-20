@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
+from .routes import booking  # Add this import
 
 app = FastAPI(title="FastAPI MongoDB App")
 
@@ -14,4 +15,7 @@ async def shutdown_db_client():
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to FastAPI MongoDB API"} 
+    return {"message": "Welcome to FastAPI MongoDB API"}
+
+# Add this line with the other router includes
+app.include_router(booking.router, prefix="/api/bookings", tags=["bookings"]) 
