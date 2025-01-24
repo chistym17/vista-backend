@@ -1,6 +1,15 @@
 from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
-from .routes import booking  # Add this import
+from .routes import booking
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    mongodb_uri: str = "mongodb://localhost:27017"
+    
+    class Config:
+        env_file = ".env"
+
+settings = Settings()
 
 app = FastAPI(title="FastAPI MongoDB App")
 
@@ -17,5 +26,4 @@ async def shutdown_db_client():
 async def root():
     return {"message": "Welcome to FastAPI MongoDB API"}
 
-# Add this line with the other router includes
 app.include_router(booking.router, prefix="/api/bookings", tags=["bookings"]) 
