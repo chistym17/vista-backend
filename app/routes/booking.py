@@ -20,7 +20,8 @@ async def create_booking(request: Request, booking: BookingCreate = Body(...)):
                 {"_id": new_booking.inserted_id}
             )
             if created_booking:
-                created_booking["_id"] = str(created_booking["_id"])
+                created_booking["id"] = str(created_booking["_id"])
+                del created_booking["_id"]
                 return created_booking
             
         raise HTTPException(
@@ -33,7 +34,7 @@ async def create_booking(request: Request, booking: BookingCreate = Body(...)):
             detail=str(e)
         )
     except Exception as e:
-        print(f"Error creating booking: {str(e)}")  
+        print(f"Error creating booking: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)

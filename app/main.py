@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from .routes import booking
 from pydantic_settings import BaseSettings
@@ -12,6 +13,14 @@ class Settings(BaseSettings):
 settings = Settings()
 
 app = FastAPI(title="FastAPI MongoDB App")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  
+    allow_credentials=True,
+    allow_methods=["*"],  
+    allow_headers=["*"],  
+)
 
 @app.on_event("startup")
 async def startup_db_client():
