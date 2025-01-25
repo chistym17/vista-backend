@@ -3,22 +3,37 @@ from fastapi.encoders import jsonable_encoder
 from typing import List
 from ..schemas.booking import BookingCreate, BookingResponse
 from bson import ObjectId
+from pydantic import ValidationError
 
 router = APIRouter()
 
 @router.post("/", response_model=BookingResponse)
 async def create_booking(request: Request, booking: BookingCreate = Body(...)):
     try:
-        booking = jsonable_encoder(booking)
-        booking["totalAmount"] = 299.0
+        booking_dict = jsonable_encoder(booking)
+        booking_dict["totalAmount"] = 299.0
         
-        new_booking = await request.app.mongodb["bookings"].insert_one(booking)
-        created_booking = await request.app.mongodb["bookings"].find_one(
-            {"_id": new_booking.inserted_id}
+        new_booking = await request.app.mongodb["bookings"].insert_one(booking_dict)
+        
+        if new_booking.inserted_id:
+            created_booking = await request.app.mongodb["bookings"].find_one(
+                {"_id": new_booking.inserted_id}
+            )
+            if created_booking:
+                created_booking["_id"] = str(created_booking["_id"])
+                return created_booking
+            
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create booking"
         )
-        
-        return created_booking
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e)
+        )
     except Exception as e:
+        print(f"Error creating booking: {str(e)}")  
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)

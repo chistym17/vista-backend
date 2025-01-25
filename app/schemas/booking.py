@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 class ContactInfo(BaseModel):
     name: str
@@ -20,9 +20,34 @@ class BookingCreate(BaseModel):
     status: str
     totalNights: int
 
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "userId": "user123",
+                "userEmail": "test@example.com",
+                "destination": "Paris",
+                "checkIn": "2024-03-20T14:00:00Z",
+                "checkOut": "2024-03-25T11:00:00Z",
+                "guests": 2,
+                "roomType": "deluxe",
+                "contactInfo": {
+                    "name": "John Doe",
+                    "email": "john@example.com",
+                    "phone": "+1234567890"
+                },
+                "bookingDate": "2024-03-15T10:30:00Z",
+                "status": "pending",
+                "totalNights": 5
+            }
+        }
+
 class BookingResponse(BookingCreate):
-    id: str
+    id: str = Field(alias="_id")
     totalAmount: float
 
     class Config:
-        from_attributes = True 
+        populate_by_name = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat(),
+        }
+        allow_population_by_field_name = True 
