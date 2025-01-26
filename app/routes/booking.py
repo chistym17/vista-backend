@@ -46,6 +46,8 @@ async def get_user_bookings(request: Request, user_id: str):
     try:
         cursor = request.app.mongodb["bookings"].find({"userId": user_id})
         async for booking in cursor:
+            booking["id"] = str(booking["_id"])
+            del booking["_id"]
             bookings.append(booking)
         return bookings
     except Exception as e:
@@ -58,6 +60,8 @@ async def get_user_bookings(request: Request, user_id: str):
 async def get_booking(request: Request, booking_id: str):
     try:
         if (booking := await request.app.mongodb["bookings"].find_one({"_id": ObjectId(booking_id)})) is not None:
+            booking["id"] = str(booking["_id"])
+            del booking["_id"]
             return booking
         raise HTTPException(status_code=404, detail=f"Booking {booking_id} not found")
     except Exception as e:
@@ -80,11 +84,15 @@ async def update_booking(request: Request, booking_id: str, booking: BookingCrea
                 if (updated_booking := await request.app.mongodb["bookings"].find_one(
                     {"_id": ObjectId(booking_id)}
                 )) is not None:
+                    updated_booking["id"] = str(updated_booking["_id"])
+                    del updated_booking["_id"]
                     return updated_booking
 
         if (existing_booking := await request.app.mongodb["bookings"].find_one(
             {"_id": ObjectId(booking_id)}
         )) is not None:
+            existing_booking["id"] = str(existing_booking["_id"])
+            del existing_booking["_id"]
             return existing_booking
 
         raise HTTPException(status_code=404, detail=f"Booking {booking_id} not found")
@@ -97,10 +105,20 @@ async def update_booking(request: Request, booking_id: str, booking: BookingCrea
 @router.delete("/{booking_id}")
 async def delete_booking(request: Request, booking_id: str):
     try:
+        booking = await request.app.mongodb["bookings"].find_one({"_id": ObjectId(booking_id)})
+        if not booking:
+            raise HTTPException(status_code=404, detail=f"Booking {booking_id} not found")
+            
         delete_result = await request.app.mongodb["bookings"].delete_one({"_id": ObjectId(booking_id)})
         
         if delete_result.deleted_count == 1:
-            return {"status": "success", "message": f"Booking {booking_id} deleted"}
+            booking["id"] = str(booking["_id"])
+            del booking["_id"]
+            return {
+                "status": "success",
+                "message": f"Booking {booking_id} deleted",
+                "deleted_booking": booking
+            }
             
         raise HTTPException(status_code=404, detail=f"Booking {booking_id} not found")
     except Exception as e:
